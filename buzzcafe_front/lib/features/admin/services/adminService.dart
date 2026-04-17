@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:buzzcafe_front/core/config/environment.dart';
 import 'package:buzzcafe_front/features/admin/models/product.dart';
 import 'package:http/http.dart' as http;
 
 class AdminService {
-  final String baseUrl = "http://10.228.6.86:8080/api/admin";
+  final String baseUrl = "${Environment.baseUrl}/admin";
 
   Future<List<Product>> getProductosAdmin(String token) async {
     try {

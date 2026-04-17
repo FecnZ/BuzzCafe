@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'package:buzzcafe_front/core/config/environment.dart';
 import 'package:buzzcafe_front/core/models/Usuario.dart';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final String url =
-      "http://10.228.6.86:8080/api/auth/login"; // Cambia la IP por la tuya
+  final String url = "${Environment.baseUrl}/auth/login";
 
   Future<Usuario> login(String user, String pass) async {
     try {
