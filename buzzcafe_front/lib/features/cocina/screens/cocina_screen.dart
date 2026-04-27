@@ -1,23 +1,11 @@
 import 'package:flutter/material.dart';
-
-// Modelo de datos de prueba para pintar la interfaz
-class OrderItem {
-  final int qty;
-  final String name;
-  final String? note;
-
-  OrderItem(this.qty, this.name, {this.note});
-}
-
-class Order {
-  final String id;
-  final String mesa;
-  final String time;
-  final String status; // 'preparar' o 'finalizar'
-  final List<OrderItem> items;
-
-  Order(this.id, this.mesa, this.time, this.status, this.items);
-}
+import 'package:provider/provider.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/custom_sidebar.dart';
+import '../models/kitchen_order.dart';
+import '../views/cocina_orders_view.dart';
+import '../views/cocina_history_view.dart';
 
 class CocinaScreen extends StatefulWidget {
   const CocinaScreen({super.key});
@@ -27,246 +15,226 @@ class CocinaScreen extends StatefulWidget {
 }
 
 class _CocinaScreenState extends State<CocinaScreen> {
-  // Datos MOCK idénticos a la imagen
-  final List<Order> pendingOrders = [
-    Order('1', 'Mesa 7', '5:33', 'preparar', [
-      OrderItem(1, 'caffe', note: 'sin azucar'),
-      OrderItem(2, 'pan de dulce'),
-      OrderItem(1, 'capuccino'),
-    ]),
-    Order('2', 'Mesa 7', '5:33', 'finalizar', [
-      OrderItem(1, 'caffe', note: 'sin azucar'),
-      OrderItem(2, 'pan de dulce'),
-      OrderItem(1, 'capuccino'),
-    ]),
-    Order('3', 'Mesa 7', '5:33', 'finalizar', [
-      OrderItem(1, 'caffe', note: 'sin azucar'),
-      OrderItem(2, 'pan de dulce'),
-      OrderItem(1, 'capuccino'),
-    ]),
-    Order('4', 'Mesa 8', '5:40', 'preparar', [
-      OrderItem(1, 'caffe', note: 'sin azucar'),
-      OrderItem(2, 'pan de dulce'),
-      OrderItem(1, 'capuccino'),
-    ]),
-    Order('5', 'Mesa 8', '5:40', 'finalizar', [
-      OrderItem(1, 'caffe', note: 'sin azucar'),
-      OrderItem(2, 'pan de dulce'),
-      OrderItem(1, 'capuccino'),
-    ]),
-    Order('6', 'Mesa 8', '5:40', 'finalizar', [
-      OrderItem(1, 'caffe', note: 'sin azucar'),
-      OrderItem(2, 'pan de dulce'),
-      OrderItem(1, 'capuccino'),
-    ]),
+  int selectedIndex = 0;
+
+  final List<SidebarItem> _cocinaItems = [
+    SidebarItem(icon: Icons.restaurant_menu, title: "Órdenes Activas"),
+    SidebarItem(icon: Icons.history, title: "Historial"),
   ];
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  Datos MOCK — Se reemplazarán con datos reales del backend
+  // ═══════════════════════════════════════════════════════════════════
+  late List<KitchenOrder> _activeOrders;
+  final List<KitchenOrder> _completedOrders = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _activeOrders = [
+      KitchenOrder('001', 'Mesa 1', '10:15', 'pendiente', [
+        OrderItem(2, 'Hot Cakes Extras', note: 'Sin mantequilla'),
+        OrderItem(1, 'Café Americano'),
+        OrderItem(1, 'Jugo de Naranja'),
+      ], cajero: 'Cajero 1'),
+      KitchenOrder('002', 'Mesa 3', '10:22', 'pendiente', [
+        OrderItem(1, 'Ensalada César'),
+        OrderItem(2, 'Frappé Moka', note: 'Extra chocolate'),
+      ], cajero: 'Cajero 1'),
+      KitchenOrder('003', 'Mesa 1', '10:30', 'preparando', [
+        OrderItem(1, 'Huevos Revueltos'),
+        OrderItem(1, 'Capuccino', note: 'Sin azúcar'),
+        OrderItem(2, 'Pan de Dulce'),
+      ], cajero: 'Cajero 2'),
+      KitchenOrder('004', 'Mesa 5', '10:35', 'preparando', [
+        OrderItem(3, 'Tarta de Queso'),
+        OrderItem(1, 'Café Latte'),
+      ], cajero: 'Cajero 1'),
+      KitchenOrder('005', 'Mesa 7', '10:40', 'listo', [
+        OrderItem(1, 'Ensalada César'),
+        OrderItem(1, 'Agua Mineral'),
+      ], cajero: 'Cajero 2'),
+      KitchenOrder('006', 'Mesa 2', '10:45', 'pendiente', [
+        OrderItem(2, 'Café Americano', note: 'Doble cargado'),
+        OrderItem(1, 'Croissant'),
+      ], cajero: 'Cajero 1'),
+    ];
+  }
+
+  void _handleStatusChange(KitchenOrder order) {
+    setState(() {
+      if (order.status == 'entregado') {
+        _activeOrders.removeWhere((o) => o.id == order.id);
+        _completedOrders.insert(0, order);
+      }
+      // Si no es 'entregado', el estado ya se actualizó en el modelo
+    });
+    
+    // Mostrar confirmación
+    final statusLabels = {
+      'preparando': 'en preparación',
+      'listo': 'listo para servir',
+      'entregado': 'entregado',
+    };
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Orden #${order.id} (${order.mesa}) → ${statusLabels[order.status] ?? order.status}',
+        ),
+        backgroundColor: order.status == 'entregado'
+            ? Colors.green
+            : AppColors.primaryOrange,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Detectamos si está en modo oscuro para ajustar el fondo principal y las tarjetas
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1B1B1B) : const Color(0xFFFFF9F0); // Color cremita de fondo
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text('Pedidos Pendientes'),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF5D3915), // Café oscuro de la cabecera
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, size: 28),
-            onPressed: () {},
-          ),
-          const SizedBox(width: 8),
-        ],
-        leading: IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: colorScheme.surface,
       body: Row(
         children: [
-          // Flecha Izquierda
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, size: 40),
-              color: isDark ? Colors.white54 : Colors.black87,
-              onPressed: () {}, // Acción de paginación
-            ),
+          CustomSidebar(
+            roleName: "Cocina Panel",
+            items: _cocinaItems,
+            selectedIndex: selectedIndex,
+            onItemSelected: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
+            onLogout: () {
+              context.read<UserProvider>().logout();
+            },
           ),
-          
-          // Grid Central de Pedidos
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24.0),
-              child: GridView.builder(
-                itemCount: pendingOrders.length,
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 350,
-                  mainAxisSpacing: 24,
-                  crossAxisSpacing: 24,
-                  childAspectRatio: 0.85, // Relación ancho/alto de las tarjetas
-                ),
-                itemBuilder: (context, index) {
-                  return _buildOrderCard(pendingOrders[index], isDark);
-                },
-              ),
-            ),
-          ),
-
-          // Flecha Derecha
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_forward_ios, size: 40),
-              color: isDark ? Colors.white54 : Colors.black87,
-              onPressed: () {}, // Acción de paginación
-            ),
+            child: _buildMainContent(colorScheme, isDark),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildOrderCard(Order order, bool isDark) {
-    // Lógica de colores según el estado
-    final isPreparar = order.status == 'preparar';
-    
-    final headerColor = isPreparar 
-        ? const Color(0xFF4E2A04) // Café muy oscuro
-        : const Color(0xFFC7A84E); // Dorado/Amarillo mostaza
-        
-    final headerTextColor = isPreparar ? Colors.white : Colors.black87;
+  Widget _buildMainContent(ColorScheme colorScheme, bool isDark) {
+    // Conteo rápido para el header
+    final pendientes =
+        _activeOrders.where((o) => o.status == 'pendiente').length;
+    final preparando =
+        _activeOrders.where((o) => o.status == 'preparando').length;
+    final listos = _activeOrders.where((o) => o.status == 'listo').length;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // CABECERA (Mesa y Hora)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: headerColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
+    return Column(
+      children: [
+        // ── Top Bar ──
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? Colors.white10 : Colors.black12,
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  order.mesa,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w500,
-                    color: headerTextColor,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    order.time,
-                    style: const TextStyle(
+          ),
+          child: Row(
+            children: [
+              // Título de la sección
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getTitleForIndex(selectedIndex),
+                    style: TextStyle(
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          
-          // LISTA DE PRODUCTOS
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: order.items.length,
-              itemBuilder: (context, i) {
-                final item = order.items[i];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'x${item.qty} ',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          Expanded(
-                            child: Text(
-                              item.name,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        ],
+                  if (selectedIndex == 0)
+                    Text(
+                      "$pendientes pendientes · $preparando preparando · $listos listos",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurface.withAlpha(120),
                       ),
-                      if (item.note != null)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 24.0, top: 4.0),
-                          child: Text(
-                            'Nota: ${item.note}',
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 14,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
+                    ),
+                ],
+              ),
+              const Spacer(),
+              // Avatar del usuario
+              Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        "Cocina",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
+                      ),
+                      Text(
+                        "cocina@buzzcafe.com",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurface.withAlpha(153),
+                        ),
+                      ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
-          
-          // BOTÓN DE ACCIÓN
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2C2C2C), // Gris muy oscuro / casi negro
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                  const SizedBox(width: 15),
+                  CircleAvatar(
+                    backgroundColor: AppColors.primaryOrange,
+                    child: Icon(
+                      Icons.restaurant,
+                      color: isDark ? AppColors.textDark : Colors.white,
+                    ),
+                  ),
+                ],
               ),
-              onPressed: () {
-                // Aquí iría la lógica para cambiar el estado de la orden
-              },
-              child: Text(
-                isPreparar ? 'Preparar' : 'finalizar',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+
+        // ── Content ──
+        Expanded(
+          child: Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: _getContentForIndex(selectedIndex),
+          ),
+        ),
+      ],
     );
+  }
+
+  String _getTitleForIndex(int index) {
+    switch (index) {
+      case 0:
+        return "Órdenes Activas";
+      case 1:
+        return "Historial de Órdenes";
+      default:
+        return "";
+    }
+  }
+
+  Widget _getContentForIndex(int index) {
+    switch (index) {
+      case 0:
+        return CocinaOrdersView(
+          orders: _activeOrders,
+          onStatusChange: _handleStatusChange,
+        );
+      case 1:
+        return CocinaHistoryView(completedOrders: _completedOrders);
+      default:
+        return const Center(child: Text("Selecciona una opción"));
+    }
   }
 }

@@ -19,38 +19,39 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class DataConfig {
 
-    @Bean
-    CommandLineRunner loadData(UserRepository repository, ProductRepository prodRepo,
-            OrdenRepository orderRepo, PasswordEncoder passwordEncoder) {
-        return args -> {
-            // 1. Usuarios (Agregamos uno de cocina para tu tablet)
-            repository.save(new Usuario(null, "admin", passwordEncoder.encode("1234"), "Fernando Admin",
-                    com.buzzcafe.backend.entities.RolUsuario.ADMIN, true));
-            repository.save(new Usuario(null, "chef1", passwordEncoder.encode("1234"), "Juan Cocina",
-                    com.buzzcafe.backend.entities.RolUsuario.COCINA, true));
-            repository.save(new Usuario(null, "cajero1", passwordEncoder.encode("asdf"), "Sam Cajero",
-                    com.buzzcafe.backend.entities.RolUsuario.CAJERO, true));
+        @Bean
+        CommandLineRunner loadData(UserRepository repository, ProductRepository prodRepo,
+                        OrdenRepository orderRepo, PasswordEncoder passwordEncoder) {
+                return args -> {
+                        // 1. Usuarios (Agregamos uno de cocina para tu tablet)
+                        repository.save(new Usuario(null, "admin", passwordEncoder.encode("1234"), "Fernando Admin",
+                                        com.buzzcafe.backend.entities.RolUsuario.ADMIN, true));
+                        repository.save(new Usuario(null, "chef", passwordEncoder.encode("1234"), "Juan Cocina",
+                                        com.buzzcafe.backend.entities.RolUsuario.COCINA, true));
+                        repository.save(new Usuario(null, "cajero", passwordEncoder.encode("1234"), "Sam Cajero",
+                                        com.buzzcafe.backend.entities.RolUsuario.CAJERO, true));
 
-            // 2. Productos
-            Producto espresso = prodRepo.save(new Producto(null, "Espresso", "Café puro", 35.0, 50, "Bebidas"));
-            prodRepo.save(new Producto(null, "Capuccino", "Leche cremosa", 48.0, 30, "Bebidas"));
+                        // 2. Productos
+                        Producto espresso = prodRepo
+                                        .save(new Producto(null, "Espresso", "Café puro", 35.0, 50, "Bebidas"));
+                        prodRepo.save(new Producto(null, "Capuccino", "Leche cremosa", 48.0, 30, "Bebidas"));
 
-            // 3. Una orden lista para que la reciba la cocina
-            Orden nuevaOrden = new Orden();
-            nuevaOrden.setVendedor(repository.findAll().get(0));
-            nuevaOrden.setTotal(35.0);
-            nuevaOrden.setEstado(EstadoOrden.PENDIENTE);
+                        // 3. Una orden lista para que la reciba la cocina
+                        Orden nuevaOrden = new Orden();
+                        nuevaOrden.setVendedor(repository.findAll().get(0));
+                        nuevaOrden.setTotal(35.0);
+                        nuevaOrden.setEstado(EstadoOrden.PENDIENTE);
 
-            DetalleOrden detalle = new DetalleOrden();
-            detalle.setOrden(nuevaOrden);
-            detalle.setProducto(espresso);
-            detalle.setCantidad(1);
-            detalle.setPrecioUnitario(35.0);
+                        DetalleOrden detalle = new DetalleOrden();
+                        detalle.setOrden(nuevaOrden);
+                        detalle.setProducto(espresso);
+                        detalle.setCantidad(1);
+                        detalle.setPrecioUnitario(35.0);
 
-            nuevaOrden.setDetalles(List.of(detalle));
-            orderRepo.save(nuevaOrden);
+                        nuevaOrden.setDetalles(List.of(detalle));
+                        orderRepo.save(nuevaOrden);
 
-            System.out.println("--- Datos de prueba cargados: Usuario 'chef1' listo para la tablet ---");
-        };
-    }
+                        System.out.println("--- Datos de prueba cargados: Usuario 'chef1' listo para la tablet ---");
+                };
+        }
 }
