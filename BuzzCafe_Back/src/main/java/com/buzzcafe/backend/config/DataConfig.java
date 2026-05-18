@@ -33,8 +33,8 @@ public class DataConfig {
 
                         // 2. Productos
                         Producto espresso = prodRepo
-                                        .save(new Producto(null, "Espresso", "Café puro", 35.0, 50, "Bebidas"));
-                        prodRepo.save(new Producto(null, "Capuccino", "Leche cremosa", 48.0, 30, "Bebidas"));
+                                        .save(new Producto(null, "Espresso", "Café puro", 35.0, 50, "Bebidas", true));
+                        prodRepo.save(new Producto(null, "Capuccino", "Leche cremosa", 48.0, 30, "Bebidas", true));
 
                         // 3. Una orden lista para que la reciba la cocina
                         Orden nuevaOrden = new Orden();

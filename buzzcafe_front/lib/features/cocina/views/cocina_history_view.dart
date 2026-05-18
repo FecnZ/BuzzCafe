@@ -124,17 +124,17 @@ class _CocinaHistoryViewState extends State<CocinaHistoryView> {
   Widget _buildHistoryCard(KitchenOrder order, bool isDark, Color cardColor,
       ColorScheme colorScheme) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
         boxShadow: !isDark
             ? [
                 BoxShadow(
-                  color: Colors.black.withAlpha(6),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withAlpha(8),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ]
             : [],
@@ -143,67 +143,107 @@ class _CocinaHistoryViewState extends State<CocinaHistoryView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Header ──
+          // ── Header Premium ──
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.green.withAlpha(isDark ? 40 : 25),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(10)),
+              color: Colors.green.withAlpha(isDark ? 30 : 15),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                bottom: BorderSide(color: Colors.green.withAlpha(isDark ? 50 : 30)),
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 18),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha(isDark ? 60 : 40),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_rounded, color: Colors.green, size: 16),
+                ),
+                const SizedBox(width: 10),
                 Text(
                   "Orden #${order.id}",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: 15,
                     color: colorScheme.onSurface,
                   ),
                 ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha(40),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    "Entregado",
+                    style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                  ),
+                ),
                 const Spacer(),
+                Icon(Icons.table_restaurant_outlined, size: 16, color: AppColors.primaryOrange.withAlpha(200)),
+                const SizedBox(width: 4),
                 Text(
                   order.mesa,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryOrange,
                     fontSize: 14,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
+                Icon(Icons.access_time_rounded, size: 14, color: colorScheme.onSurface.withAlpha(100)),
+                const SizedBox(width: 4),
                 Text(
                   order.time,
                   style: TextStyle(
-                    color: colorScheme.onSurface.withAlpha(120),
+                    color: colorScheme.onSurface.withAlpha(150),
                     fontSize: 13,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          // ── Items listados de manera compacta ──
+          // ── Items listados de manera compacta y estética ──
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Wrap(
-              spacing: 8,
-              runSpacing: 6,
+              spacing: 10,
+              runSpacing: 8,
               children: order.items
                   .map((item) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withAlpha(10)
-                              : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(6),
+                          color: isDark ? Colors.white.withAlpha(8) : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5)),
                         ),
-                        child: Text(
-                          "x${item.qty} ${item.name}",
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: colorScheme.onSurface,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "${item.qty}x",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface.withAlpha(180),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              item.name,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ))
                   .toList(),

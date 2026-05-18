@@ -29,15 +29,47 @@ class AdminProvider extends ChangeNotifier {
   }
 
   Future<bool> agregarProducto(Product producto, String token) async {
+    _isLoading = true;
+    _errorMessage = "";
+    notifyListeners();
+
     try {
       final productocreado = await _adminService.crearProducto(producto, token);
-
-      _productos.add(productocreado!);
-
-      notifyListeners();
-      return true;
+      if (productocreado != null) {
+        _productos.add(productocreado);
+        return true;
+      }
+      return false;
     } catch (e) {
-      throw Exception(e.toString());
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> eliminarProducto(String id, String token) async {
+    _isLoading = true;
+    _errorMessage = "";
+    notifyListeners();
+
+    try {
+      final success = await _adminService.eliminarProducto(id, token);
+      if (success) {
+        final index = _productos.indexWhere((p) => p.id == id);
+        if (index != -1) {
+          _productos[index] = _productos[index].copyWith(activo: false);
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

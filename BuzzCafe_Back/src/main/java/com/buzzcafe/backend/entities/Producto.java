@@ -21,4 +21,5 @@ public class Producto {
     private Double precio;
     private Integer stock;
     private String categoria;
+    private Boolean activo = true;
 }

@@ -6,6 +6,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/custom_sidebar.dart'; // Importa nuestro nuevo widget
 import '../views/admin_dashboard_view.dart'; // Importa la nueva vista separada
 import '../views/admin_menu_view.dart';
+import '../views/admin_history_view.dart';
+import '../views/admin_users_view.dart';
+import '../views/admin_settings_view.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -190,15 +193,11 @@ class _AdminScreenState extends State<AdminScreen> {
       case 1:
         return const AdminMenuView();
       case 2:
-        return Center(
-          child: Text(
-            "Gestión de Usuarios",
-            style: TextStyle(
-              fontSize: 18,
-              color: colorScheme.onSurface.withAlpha(153),
-            ),
-          ),
-        );
+        return const AdminUsersView();
+      case 3:
+        return const AdminHistoryView();
+      case 4:
+        return const AdminSettingsView();
       default:
         return Center(
           child: Text(

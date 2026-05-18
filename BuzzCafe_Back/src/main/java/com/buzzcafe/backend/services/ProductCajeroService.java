@@ -17,7 +17,7 @@ public class ProductCajeroService {
     }
 
     public List<ProductoCajeroDTO> consulta() {
-        return productRepository.findAll().stream()
+        return productRepository.findByActivoTrue().stream()
                 .map(ProductMapper::toCajeroDTO)
                 .toList();
 

@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProductRepository extends JpaRepository<Producto, Long> {
     List<Producto> findAll();
+    List<Producto> findByActivoTrue();
 }

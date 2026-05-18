@@ -4,6 +4,7 @@ import '../../../core/providers/user_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/custom_sidebar.dart';
 import '../views/cajero_card_config_view.dart';
+import '../views/cajero_history_view.dart';
 import '../views/cajero_pos_view.dart';
 
 class CajeroScreen extends StatefulWidget {
@@ -143,12 +144,7 @@ class _CajeroScreenState extends State<CajeroScreen> {
       case 0:
         return const CajeroPOSView();
       case 1:
-        return Center(
-          child: Text(
-            "Historial de ventas va aquí",
-            style: TextStyle(color: colorScheme.onSurface),
-          ),
-        );
+        return const CajeroHistoryView();
       case 2:
         return const CajeroCardConfigView();
       default:

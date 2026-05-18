@@ -20,7 +20,8 @@ public class ProductMapper {
                 p.getDescripcion(),
                 p.getPrecio(),
                 p.getStock(),
-                p.getCategoria());
+                p.getCategoria(),
+                p.getActivo());
     }
 
     public static Producto toProducto(ProductoAdminDTO p) {
@@ -30,7 +31,8 @@ public class ProductMapper {
                 p.descripcion(),
                 p.precio(),
                 p.stock(),
-                p.categoria());
+                p.categoria(),
+                p.activo() != null ? p.activo() : true);
 
     }
 

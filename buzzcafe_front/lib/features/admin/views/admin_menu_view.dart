@@ -1,6 +1,8 @@
 import 'package:buzzcafe_front/features/admin/provider/adminProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/utils/notificacionesUI.dart';
 import '../../../core/theme/app_colors.dart';
 import '../models/product.dart';
 import 'admin_add_product_view.dart';
@@ -19,13 +21,18 @@ class AdminMenuView extends StatefulWidget {
 
 class _AdminMenuViewState extends State<AdminMenuView> {
   bool _showAddForm = false;
+  Product? _productToEdit;
 
   @override
   Widget build(BuildContext context) {
     // Si se activa el formulario, mostrarlo en lugar de la tabla
     if (_showAddForm) {
       return AdminAddProductView(
-        onCancel: () => setState(() => _showAddForm = false),
+        productToEdit: _productToEdit,
+        onCancel: () => setState(() {
+          _showAddForm = false;
+          _productToEdit = null;
+        }),
       );
     }
 
@@ -60,7 +67,15 @@ class _AdminMenuViewState extends State<AdminMenuView> {
             onAddPressed: () => setState(() => _showAddForm = true),
           ),
           const SizedBox(height: 20),
-          _ProductTablePaginada(productos: provider.productos, isDark: isDark),
+          _ProductTablePaginada(
+            productos: provider.productos,
+            isDark: isDark,
+            parentContext: context,
+            onEdit: (p) => setState(() {
+              _productToEdit = p;
+              _showAddForm = true;
+            }),
+          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -210,8 +225,15 @@ class _FilterBar extends StatelessWidget {
 class _ProductTablePaginada extends StatefulWidget {
   final List<Product> productos;
   final bool isDark;
+  final BuildContext parentContext;
+  final Function(Product) onEdit;
 
-  const _ProductTablePaginada({required this.productos, required this.isDark});
+  const _ProductTablePaginada({
+    required this.productos,
+    required this.isDark,
+    required this.parentContext,
+    required this.onEdit,
+  });
 
   @override
   State<_ProductTablePaginada> createState() => _ProductTablePaginadaState();
@@ -226,6 +248,8 @@ class _ProductTablePaginadaState extends State<_ProductTablePaginada> {
     _dataSource = _ProductDataSource(
       products: widget.productos,
       isDark: widget.isDark,
+      context: widget.parentContext,
+      onEdit: widget.onEdit,
     );
   }
 
@@ -238,6 +262,8 @@ class _ProductTablePaginadaState extends State<_ProductTablePaginada> {
 
   @override
   Widget build(BuildContext context) {
+    _dataSource.context = widget
+        .parentContext; // Mantener el BuildContext de la página fresco y activo
     final isDark = widget.isDark;
     final bg = isDark ? _kDarkSurface : _kLightSurface;
     final onSurface = isDark ? _kDarkOn : _kLightOn;
@@ -294,6 +320,7 @@ class _ProductTablePaginadaState extends State<_ProductTablePaginada> {
               "Categoría",
               "Precio",
               "Stock",
+              "Estado",
               "Acciones",
             ])
               DataColumn(
@@ -319,10 +346,16 @@ class _ProductTablePaginadaState extends State<_ProductTablePaginada> {
 class _ProductDataSource extends DataTableSource {
   List<Product> _products;
   bool _isDark;
+  BuildContext context;
+  final Function(Product) onEdit;
 
-  _ProductDataSource({required List<Product> products, required bool isDark})
-    : _products = products,
-      _isDark = isDark;
+  _ProductDataSource({
+    required List<Product> products,
+    required bool isDark,
+    required this.context,
+    required this.onEdit,
+  }) : _products = products,
+       _isDark = isDark;
 
   // Actualiza datos y modo oscuro preservando el estado de paginación
   void update(List<Product> products, bool isDark) {
@@ -384,6 +417,31 @@ class _ProductDataSource extends DataTableSource {
           Text(item.stock.toString(), style: TextStyle(color: onSurface)),
         ),
         DataCell(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: item.activo
+                  ? Colors.green.withAlpha(25)
+                  : Colors.red.withAlpha(25),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: item.activo
+                    ? Colors.green.withAlpha(100)
+                    : Colors.red.withAlpha(100),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              item.activo ? "Activo" : "Inactivo",
+              style: TextStyle(
+                color: item.activo ? Colors.green : Colors.red,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        DataCell(
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -393,7 +451,7 @@ class _ProductDataSource extends DataTableSource {
                   size: 18,
                   color: _isDark ? Colors.lightBlueAccent : Colors.blue,
                 ),
-                onPressed: () {},
+                onPressed: () => onEdit(item),
                 tooltip: "Editar",
                 constraints: const BoxConstraints(maxWidth: 32, maxHeight: 32),
                 padding: EdgeInsets.zero,
@@ -404,7 +462,16 @@ class _ProductDataSource extends DataTableSource {
                   size: 18,
                   color: _isDark ? Colors.redAccent : Colors.red,
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  if (!item.activo) {
+                    NotificacionesUI.mostrarError(
+                      context,
+                      "El producto \"${item.nombre}\" ya se encuentra inactivo.",
+                    );
+                  } else {
+                    _mostrarConfirmacionEliminar(context, item);
+                  }
+                },
                 tooltip: "Eliminar",
                 constraints: const BoxConstraints(maxWidth: 32, maxHeight: 32),
                 padding: EdgeInsets.zero,
@@ -413,6 +480,69 @@ class _ProductDataSource extends DataTableSource {
           ),
         ),
       ],
+    );
+  }
+
+  void _mostrarConfirmacionEliminar(BuildContext context, Product product) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text("Confirmar eliminación"),
+          content: Text(
+            "¿Estás seguro de que deseas eliminar el producto \"${product.nombre}\"? Esta acción no se puede deshacer.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop(); // Cerrar el diálogo
+
+                try {
+                  final token = context.read<UserProvider>().token;
+                  final adminProvider = context.read<AdminProvider>();
+
+                  if (token == null) {
+                    NotificacionesUI.mostrarError(
+                      context,
+                      "Sesión expirada. Por favor, inicia sesión de nuevo.",
+                    );
+                    return;
+                  }
+
+                  final exito = await adminProvider.eliminarProducto(
+                    product.id,
+                    token,
+                  );
+
+                  if (context.mounted) {
+                    if (exito) {
+                      NotificacionesUI.mostrarExito(
+                        context,
+                        "Producto \"${product.nombre}\" eliminado correctamente",
+                      );
+                    } else {
+                      NotificacionesUI.mostrarError(
+                        context,
+                        "Error al eliminar: ${adminProvider.errorMessage}",
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    NotificacionesUI.mostrarError(context, "Error local: $e");
+                  }
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text("Eliminar"),
+            ),
+          ],
+        );
+      },
     );
   }
 

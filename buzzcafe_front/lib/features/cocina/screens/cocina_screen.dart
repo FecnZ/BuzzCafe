@@ -26,11 +26,21 @@ class _CocinaScreenState extends State<CocinaScreen> {
   //  Datos MOCK — Se reemplazarán con datos reales del backend
   // ═══════════════════════════════════════════════════════════════════
   late List<KitchenOrder> _activeOrders;
-  final List<KitchenOrder> _completedOrders = [];
+  late List<KitchenOrder> _completedOrders;
 
   @override
   void initState() {
     super.initState();
+    _completedOrders = [
+      KitchenOrder('098', 'Mesa 4', '09:15', 'entregado', [
+        OrderItem(1, 'Café Latte'),
+        OrderItem(1, 'Croissant'),
+      ], cajero: 'Cajero 1'),
+      KitchenOrder('099', 'Mesa 2', '09:40', 'entregado', [
+        OrderItem(2, 'Huevos Revueltos'),
+        OrderItem(1, 'Jugo Verde'),
+      ], cajero: 'Cajero 2'),
+    ];
     _activeOrders = [
       KitchenOrder('001', 'Mesa 1', '10:15', 'pendiente', [
         OrderItem(2, 'Hot Cakes Extras', note: 'Sin mantequilla'),

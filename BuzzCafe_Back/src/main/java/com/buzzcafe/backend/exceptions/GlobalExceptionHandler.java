@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.buzzcafe.backend.dto.ErrorResponse;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<ErrorResponse> handleStockInsuficiente(StockInsuficienteException ex) {
         return buildResponseEntity(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return buildResponseEntity(HttpStatus.CONFLICT,
+                "No se puede eliminar el producto porque está asociado a una orden u otro registro activo.");
     }
 
     @ExceptionHandler(Exception.class)

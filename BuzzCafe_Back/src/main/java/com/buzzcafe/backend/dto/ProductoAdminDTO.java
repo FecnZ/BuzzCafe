@@ -7,7 +7,8 @@ public record ProductoAdminDTO(
                 String descripcion,
                 Double precio,
                 Integer stock,
-                String categoria
+                String categoria,
+                Boolean activo
 
 ) {
 }

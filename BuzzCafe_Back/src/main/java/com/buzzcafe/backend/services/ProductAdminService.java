@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.buzzcafe.backend.dto.ProductoAdminDTO;
 import com.buzzcafe.backend.entities.Producto;
+import com.buzzcafe.backend.exceptions.ProductoNoEncontradoException;
 import com.buzzcafe.backend.repositories.ProductRepository;
 import com.buzzcafe.backend.mappers.ProductMapper;
 
@@ -27,5 +28,13 @@ public class ProductAdminService {
         Producto producto = ProductMapper.toProducto(p);
         productRepository.save(producto);
         return ProductMapper.toAdminDTO(producto);
+    }
+
+    public void eliminarProducto(Long id) {
+        Producto producto = productRepository.findById(id)
+                .orElseThrow(() -> new ProductoNoEncontradoException("Producto con ID " + id + " no encontrado"));
+
+        producto.setActivo(false); // Borrado lógico
+        productRepository.save(producto);
     }
 }

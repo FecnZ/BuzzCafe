@@ -58,4 +58,31 @@ class AdminService {
       throw Exception(e.toString().replaceAll("Exception :", ""));
     }
   }
+
+  Future<bool> eliminarProducto(String id, String token) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/remove/$id"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 204) {
+        return true;
+      } else {
+        if (response.body.isEmpty) {
+          throw Exception(
+            "Error en el servidor (código ${response.statusCode})",
+          );
+        } else {
+          final errorBody = jsonDecode(response.body);
+          throw Exception(errorBody['message'] ?? "Error desconocido");
+        }
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll("Exception: ", ""));
+    }
+  }
 }
